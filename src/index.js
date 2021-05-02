@@ -51,23 +51,29 @@ class Game extends React.Component {
         this.state = {
             history: [{ squares: Array(9).fill(null) }],
             xIsNext: true,
-            currentStep: 0
+            currentStep: 0,
+            ascSort: true
         }
     }
 
     handleSquareClick(i) {
-        const { history, xIsNext, currentStep } = this.state
-        const newHistory = history.slice(0, currentStep + 1)
-        const lastHistory = newHistory[currentStep]
+        const { history, xIsNext, currentStep, ascSort } = this.state
+        const newHistory = ascSort
+            ? history.slice(0, currentStep + 1)
+            : history.slice(currentStep, history.length)
+
+        const lastHistory = newHistory[ascSort ? currentStep : 0]
         if (calculateWinner(lastHistory.squares) || lastHistory.squares[i]) {
             return;
         }
         const squares = [...lastHistory.squares]
         squares[i] = xIsNext ? 'X' : 'O'
         this.setState({
-            history: [...newHistory, { squares, x: Math.floor(i / 3), y: i % 3 }],
+            history: ascSort
+                ? [...newHistory, { squares, x: Math.floor(i / 3), y: i % 3 }]
+                : [{ squares, x: Math.floor(i / 3), y: i % 3 }, ...newHistory],
             xIsNext: !xIsNext,
-            currentStep: currentStep + 1
+            currentStep: ascSort ? newHistory.length : 0
         })
     }
 
@@ -78,19 +84,34 @@ class Game extends React.Component {
         })
     }
 
+    sortHistory() {
+        const { ascSort, history } = this.state
+        const reversedHistory = [...history].reverse()
+        this.setState({
+            ascSort: !ascSort,
+            history: reversedHistory,
+            currentStep: !ascSort ? history.length - 1 : 0
+        })
+    }
+
     render() {
-        const { xIsNext, history, currentStep } = this.state
+        const { ascSort, xIsNext, history, currentStep } = this.state
         const current = history[currentStep]
         const winner = calculateWinner(current.squares)
         const status = winner ? `Winner: ${winner}` : `Next player: ${xIsNext ? 'X' : 'O'}`
         const historyList = history.map((item, stepIndex) => {
-            const desc = stepIndex ? `Go to #${stepIndex}：${item.x + 1}, ${item.y + 1}` : 'Game Start'
+            const startIndex = ascSort ? 0 : history.length - 1
+            const desc = stepIndex === startIndex
+                ? 'Game Start'
+                : `Go to #${stepIndex}：${item.x + 1}, ${item.y + 1}`
+
             return (
                 <li
-                    key={stepIndex}
+                    key={`${item.x}-${item.y}`}
                     className={
                         stepIndex === currentStep ? 'active ' : ''
-                        + stepIndex > currentStep ? 'determined' : ''
+                            + (ascSort && stepIndex > currentStep ? 'determined ' : '')
+                            + (!ascSort && stepIndex < currentStep ? 'determined' : '')
                     }
                 >
                     <button onClick={() => this.rollbackTo(stepIndex)}>{desc}</button>
@@ -105,7 +126,12 @@ class Game extends React.Component {
                 </div>
                 <div className="game-info">
                     <div>{status}</div>
-                    <ol className="history-list">{historyList}</ol>
+                    <div className="history-title">
+                        <button onClick={() => this.sortHistory()}>↑↓</button>
+                        &nbsp;
+                        Step List:
+                    </div>
+                    <ol className="history-list" reversed={!ascSort}>{historyList}</ol>
                 </div>
             </div>
         );
