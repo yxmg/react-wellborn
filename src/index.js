@@ -65,7 +65,7 @@ class Game extends React.Component {
         const squares = [...lastHistory.squares]
         squares[i] = xIsNext ? 'X' : 'O'
         this.setState({
-            history: [...newHistory, { squares }],
+            history: [...newHistory, { squares, x: Math.floor(i / 3), y: i % 3 }],
             xIsNext: !xIsNext,
             currentStep: currentStep + 1
         })
@@ -84,7 +84,7 @@ class Game extends React.Component {
         const winner = calculateWinner(current.squares)
         const status = winner ? `Winner: ${winner}` : `Next player: ${xIsNext ? 'X' : 'O'}`
         const historyList = history.map((item, stepIndex) => {
-            const desc = stepIndex ? `Go to #${stepIndex}` : 'Game Start'
+            const desc = stepIndex ? `Go to #${stepIndex}：${item.x + 1}, ${item.y + 1}` : 'Game Start'
             return (
                 <li key={stepIndex}>
                     <button onClick={() => this.rollbackTo(stepIndex)}>{desc}</button>
