@@ -99,8 +99,7 @@ class Game extends React.Component {
         const { ascSort, xIsNext, history, currentStep } = this.state
         const current = history[currentStep]
         const { winner, line } = calculateWinner(current.squares)
-        console.log(line, "line")
-        const status = winner ? `Winner: ${winner}` : `Next player: ${xIsNext ? 'X' : 'O'}`
+        const status = getStatus({ squares: current.squares, winner, xIsNext })
         const historyList = history.map((item, stepIndex) => {
             const startIndex = ascSort ? 0 : history.length - 1
             const desc = stepIndex === startIndex
@@ -166,6 +165,17 @@ function calculateWinner(squares) {
         }
     }
     return {}
+}
+
+function getStatus({ squares, winner, xIsNext }) {
+    console.log(squares, "squares")
+    if (winner) {
+        return `Winner: ${winner}`
+    } else if (squares.every(item => !!item)) {
+        return 'Draw'
+    } else {
+        return `Next player: ${xIsNext ? 'X' : 'O'}`
+    }
 }
 
 // 入口
