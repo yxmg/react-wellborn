@@ -57,3 +57,7 @@ ol, ul {
 .history-list .determined {
   color: lightgray;
 }
+
+.square.active {
+  background-color: lightgreen;
+}

@@ -4,7 +4,7 @@ import './index.css'
 
 function Square(props) {
     return (
-        <button className="square" onClick={props.onClick}>
+        <button className={`square ${props.active ? 'active' : ''}`} onClick={props.onClick}>
             {props.value}
         </button>
     )
@@ -14,6 +14,7 @@ class Board extends React.Component {
     renderSquare(i) {
         return (
             <Square
+                active={this.props.line && this.props.line.includes(i)}
                 value={this.props.squares[i]}
                 onClick={() => {
                     this.props.onClick(i)
@@ -63,7 +64,7 @@ class Game extends React.Component {
             : history.slice(currentStep, history.length)
 
         const lastHistory = newHistory[ascSort ? currentStep : 0]
-        if (calculateWinner(lastHistory.squares) || lastHistory.squares[i]) {
+        if (calculateWinner(lastHistory.squares).winner || lastHistory.squares[i]) {
             return;
         }
         const squares = [...lastHistory.squares]
@@ -97,7 +98,8 @@ class Game extends React.Component {
     render() {
         const { ascSort, xIsNext, history, currentStep } = this.state
         const current = history[currentStep]
-        const winner = calculateWinner(current.squares)
+        const { winner, line } = calculateWinner(current.squares)
+        console.log(line, "line")
         const status = winner ? `Winner: ${winner}` : `Next player: ${xIsNext ? 'X' : 'O'}`
         const historyList = history.map((item, stepIndex) => {
             const startIndex = ascSort ? 0 : history.length - 1
@@ -122,7 +124,11 @@ class Game extends React.Component {
         return (
             <div className="game">
                 <div className="game-board">
-                    <Board squares={current.squares} onClick={(i) => this.handleSquareClick(i)}/>
+                    <Board
+                        line={line}
+                        squares={current.squares}
+                        onClick={(i) => this.handleSquareClick(i)}
+                    />
                 </div>
                 <div className="game-info">
                     <div>{status}</div>
@@ -156,9 +162,10 @@ function calculateWinner(squares) {
             squares[a] === squares[b] &&
             squares[a] === squares[c]
         ) {
-            return squares[a]
+            return { winner: squares[a], line: lines[i] }
         }
     }
+    return {}
 }
 
 // 入口
