@@ -48,3 +48,12 @@ ol, ul {
 .game-info {
   margin-left: 20px;
 }
+
+.history-list .active {
+  color: lightcoral;
+  font-weight: bold;
+}
+
+.history-list .determined {
+  color: lightgray;
+}

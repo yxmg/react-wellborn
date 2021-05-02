@@ -86,7 +86,13 @@ class Game extends React.Component {
         const historyList = history.map((item, stepIndex) => {
             const desc = stepIndex ? `Go to #${stepIndex}：${item.x + 1}, ${item.y + 1}` : 'Game Start'
             return (
-                <li key={stepIndex}>
+                <li
+                    key={stepIndex}
+                    className={
+                        stepIndex === currentStep ? 'active ' : ''
+                        + stepIndex > currentStep ? 'determined' : ''
+                    }
+                >
                     <button onClick={() => this.rollbackTo(stepIndex)}>{desc}</button>
                 </li>
             )
@@ -99,7 +105,7 @@ class Game extends React.Component {
                 </div>
                 <div className="game-info">
                     <div>{status}</div>
-                    <ol>{historyList}</ol>
+                    <ol className="history-list">{historyList}</ol>
                 </div>
             </div>
         );
