@@ -11,36 +11,32 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-    renderSquare(i) {
+    renderSquare(position) {
+        const [x, y] = position.split(',')
         return (
             <Square
-                active={this.props.line && this.props.line.includes(i)}
-                value={this.props.squares[i]}
+                active={this.props.line && this.props.line.includes(position)}
+                value={this.props.squares[x][y]}
                 onClick={() => {
-                    this.props.onClick(i)
+                    this.props.onClick(position)
                 }}
             />
         );
     }
 
     render() {
+        const { squares } = this.props
         return (
             <div>
-                <div className="board-row">
-                    {this.renderSquare(0)}
-                    {this.renderSquare(1)}
-                    {this.renderSquare(2)}
-                </div>
-                <div className="board-row">
-                    {this.renderSquare(3)}
-                    {this.renderSquare(4)}
-                    {this.renderSquare(5)}
-                </div>
-                <div className="board-row">
-                    {this.renderSquare(6)}
-                    {this.renderSquare(7)}
-                    {this.renderSquare(8)}
-                </div>
+                {
+                    squares.map((row, rowIndex) => {
+                        return (
+                            <div className="board-row">
+                                {row.map((square, colIndex) => this.renderSquare([rowIndex, colIndex].join(',')))}
+                            </div>
+                        )
+                    })
+                }
             </div>
         );
     }
@@ -50,29 +46,30 @@ class Game extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            history: [{ squares: Array(9).fill(null) }],
+            history: [{ squares: initSquares(3) }],
             xIsNext: true,
             currentStep: 0,
             ascSort: true
         }
     }
 
-    handleSquareClick(i) {
+    handleSquareClick(position) {
+        const [x, y] = position.split(',')
         const { history, xIsNext, currentStep, ascSort } = this.state
         const newHistory = ascSort
             ? history.slice(0, currentStep + 1)
             : history.slice(currentStep, history.length)
 
         const lastHistory = newHistory[ascSort ? currentStep : 0]
-        if (calculateWinner(lastHistory.squares).winner || lastHistory.squares[i]) {
+        if (calculateWinner(lastHistory.squares).winner || lastHistory.squares[x][y]) {
             return;
         }
         const squares = [...lastHistory.squares]
-        squares[i] = xIsNext ? 'X' : 'O'
+        squares[x][y] = xIsNext ? 'X' : 'O'
         this.setState({
             history: ascSort
-                ? [...newHistory, { squares, x: Math.floor(i / 3), y: i % 3 }]
-                : [{ squares, x: Math.floor(i / 3), y: i % 3 }, ...newHistory],
+                ? [...newHistory, { squares, x, y }]
+                : [{ squares, x, y }, ...newHistory],
             xIsNext: !xIsNext,
             currentStep: ascSort ? newHistory.length : 0
         })
@@ -143,31 +140,82 @@ class Game extends React.Component {
     }
 }
 
-function calculateWinner(squares) {
-    const lines = [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-    ]
-    for (let i = 0; i < lines.length; i++) {
-        const [a, b, c] = lines[i]
-        if (
-            squares[a] &&
-            squares[a] === squares[b] &&
-            squares[a] === squares[c]
-        ) {
-            return { winner: squares[a], line: lines[i] }
+function calculateWinner(squares, lineLength = 3) {
+    // x, y 当前坐标
+    // x, y - 1 上
+    // x, y + 1 下
+    // x - 1, y 左
+    // x + 1, y 右
+    // x + 1, y + 1 右下角
+    // x - 1, y - 1 左上角
+    // x + 1, y - 1 右上角
+    // x - 1, y + 1 左下角
+    const boundary = squares.length
+    // 扫描斜线
+
+    // 扫描行列
+    for (let x = 0; x < boundary; x++) {
+        let col = []
+        let row = []
+        let leftSlash = []
+        let rightSlash = []
+
+
+        for (let y = 0; y < boundary; y++) {
+            const rowPosition = [x, y]
+            const colPosition = [y, x]
+            const [colX, colY] = col[col.length - 1] || []
+            if (col.length && squares[colX][colY] !== squares[y][x]) {
+                col = []
+            } else {
+                col.push(colPosition)
+            }
+            const [rowX, rowY] = row[row.length - 1] || []
+            if (row.length && squares[rowX][rowY] !== squares[x][y]) {
+                row = []
+            } else {
+                row.push(rowPosition)
+            }
+
+            if (col.length === lineLength) {
+                return col
+            }
+            if (row.length === lineLength) {
+                return row
+            }
+
         }
     }
-    return {}
+    // 扫描行
+
+    // const lines = [
+    //     [0, 1, 2],
+    //     [3, 4, 5],
+    //     [6, 7, 8],
+    //     [0, 3, 6],
+    //     [1, 4, 7],
+    //     [2, 5, 8],
+    //     [0, 4, 8],
+    //     [2, 4, 6],
+    // ]
+    // for (let i = 0; i < lines.length; i++) {
+    //     const [a, b, c] = lines[i]
+    //     if (
+    //         squares[a] &&
+    //         squares[a] === squares[b] &&
+    //         squares[a] === squares[c]
+    //     ) {
+    //         return { winner: squares[a], line: lines[i] }
+    //     }
+    // }
+    // return {}
 }
 
-function getStatus({ squares, winner, xIsNext }) {
+function getStatus(
+    {
+        squares, winner, xIsNext
+    }
+) {
     console.log(squares, "squares")
     if (winner) {
         return `Winner: ${winner}`
@@ -178,5 +226,12 @@ function getStatus({ squares, winner, xIsNext }) {
     }
 }
 
+// 创建NxN棋盘
+function initSquares(n) {
+    return Array(n).fill(Array(n).fill(null))
+}
+
 // 入口
-ReactDOM.render(<Game/>, document.getElementById('root'))
+ReactDOM.render(
+    <Game/>
+    , document.getElementById('root'))
