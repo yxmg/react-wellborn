@@ -11,14 +11,14 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-    renderSquare(position) {
-        const [x, y] = position.split(',')
+    renderSquare([x, y]) {
         return (
             <Square
-                active={this.props.line && this.props.line.includes(position)}
+                key={`${x}${y}`}
+                active={this.props.line && this.props.line.some(item => item[0] === x && item[1] === y)}
                 value={this.props.squares[x][y]}
                 onClick={() => {
-                    this.props.onClick(position)
+                    this.props.onClick([x, y])
                 }}
             />
         );
@@ -31,8 +31,8 @@ class Board extends React.Component {
                 {
                     squares.map((row, rowIndex) => {
                         return (
-                            <div className="board-row">
-                                {row.map((square, colIndex) => this.renderSquare([rowIndex, colIndex].join(',')))}
+                            <div className="board-row" key={rowIndex}>
+                                {row.map((square, colIndex) => this.renderSquare([rowIndex, colIndex]))}
                             </div>
                         )
                     })
@@ -53,8 +53,7 @@ class Game extends React.Component {
         }
     }
 
-    handleSquareClick(position) {
-        const [x, y] = position.split(',')
+    handleSquareClick([x, y]) {
         const { history, xIsNext, currentStep, ascSort } = this.state
         const newHistory = ascSort
             ? history.slice(0, currentStep + 1)
@@ -64,7 +63,7 @@ class Game extends React.Component {
         if (calculateWinner(lastHistory.squares).winner || lastHistory.squares[x][y]) {
             return;
         }
-        const squares = [...lastHistory.squares]
+        const squares = [[...lastHistory.squares[0]], [...lastHistory.squares[1]], [...lastHistory.squares[2]]]
         squares[x][y] = xIsNext ? 'X' : 'O'
         this.setState({
             history: ascSort
@@ -150,65 +149,65 @@ function calculateWinner(squares, lineLength = 3) {
     // x - 1, y - 1 左上角
     // x + 1, y - 1 右上角
     // x - 1, y + 1 左下角
-    const boundary = squares.length
-    // 扫描斜线
-
-    // 扫描行列
-    for (let x = 0; x < boundary; x++) {
-        let col = []
-        let row = []
-        let leftSlash = []
-        let rightSlash = []
-
-
-        for (let y = 0; y < boundary; y++) {
-            const rowPosition = [x, y]
-            const colPosition = [y, x]
-            const [colX, colY] = col[col.length - 1] || []
-            if (col.length && squares[colX][colY] !== squares[y][x]) {
-                col = []
-            } else {
-                col.push(colPosition)
-            }
-            const [rowX, rowY] = row[row.length - 1] || []
-            if (row.length && squares[rowX][rowY] !== squares[x][y]) {
-                row = []
-            } else {
-                row.push(rowPosition)
-            }
-
-            if (col.length === lineLength) {
-                return col
-            }
-            if (row.length === lineLength) {
-                return row
-            }
-
-        }
-    }
-    // 扫描行
-
-    // const lines = [
-    //     [0, 1, 2],
-    //     [3, 4, 5],
-    //     [6, 7, 8],
-    //     [0, 3, 6],
-    //     [1, 4, 7],
-    //     [2, 5, 8],
-    //     [0, 4, 8],
-    //     [2, 4, 6],
-    // ]
-    // for (let i = 0; i < lines.length; i++) {
-    //     const [a, b, c] = lines[i]
-    //     if (
-    //         squares[a] &&
-    //         squares[a] === squares[b] &&
-    //         squares[a] === squares[c]
-    //     ) {
-    //         return { winner: squares[a], line: lines[i] }
+    // const boundary = squares.length
+    // // 扫描斜线
+    //
+    // // 扫描行列
+    // for (let x = 0; x < boundary; x++) {
+    //     let col = []
+    //     let row = []
+    //     let leftSlash = []
+    //     let rightSlash = []
+    //
+    //
+    //     for (let y = 0; y < boundary; y++) {
+    //         const rowPosition = [x, y]
+    //         const colPosition = [y, x]
+    //         const [colX, colY] = col[col.length - 1] || []
+    //         if (col.length && squares[colX][colY] !== squares[y][x]) {
+    //             col = []
+    //         } else {
+    //             col.push(colPosition)
+    //         }
+    //         const [rowX, rowY] = row[row.length - 1] || []
+    //         if (row.length && squares[rowX][rowY] !== squares[x][y]) {
+    //             row = []
+    //         } else {
+    //             row.push(rowPosition)
+    //         }
+    //
+    //         if (col.length === lineLength) {
+    //             return col
+    //         }
+    //         if (row.length === lineLength) {
+    //             return row
+    //         }
+    //
     //     }
     // }
-    // return {}
+    // 扫描行
+
+    const lines = [
+        [[0, 0], [0, 1], [0, 2]],
+        [[1, 0], [1, 1], [1, 2]],
+        [[2, 0], [2, 1], [2, 2]],
+        [[0, 0], [1, 0], [2, 0]],
+        [[0, 1], [1, 1], [2, 1]],
+        [[0, 2], [1, 2], [2, 2]],
+        [[0, 0], [1, 1], [2, 2]],
+        [[0, 2], [1, 1], [2, 0]],
+    ]
+    for (let i = 0; i < lines.length; i++) {
+        const [[ax, ay], [bx, by], [cx, cy]] = lines[i]
+        if (
+            squares[ax][ay] &&
+            squares[ax][ay] === squares[bx][by] &&
+            squares[ax][ay] === squares[cx][cy]
+        ) {
+            return { winner: squares[ax][ay], line: lines[i] }
+        }
+    }
+    return {}
 }
 
 function getStatus(
@@ -216,7 +215,6 @@ function getStatus(
         squares, winner, xIsNext
     }
 ) {
-    console.log(squares, "squares")
     if (winner) {
         return `Winner: ${winner}`
     } else if (squares.every(item => !!item)) {
